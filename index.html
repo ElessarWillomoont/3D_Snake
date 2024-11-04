@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture 2 - Ray Marching</title>
+    
+    <!-- 基本样式 -->
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Open Sans', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        #canvas {
+            border: 1px solid black;
+            width: 800px;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Lecture 2</h1>
+    <h2>Ray Marching</h2>
+    <div>
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+    <script>
+        // 顶点着色器和片段着色器代码
+        const vs = `
+            #version 300 es
+
+            in vec3 a_pos;  // 将顶点数据定义为 vec3 类型
+            in vec2 a_uv;
+
+            out vec2 f_uv;
+
+            void main() {
+                gl_Position = vec4(a_pos, 1.0);  // 直接将 vec3 转换为 vec4，用于平移和投影
+                f_uv = a_uv;
+            }
+            
+        `.trim();
+        const fs = `
+            #version 300 es
+
+            precision highp float;
+
+            in vec2 f_uv;
+
+            out vec4 out_color;
+
+            void main() {
+                out_color = vec4(f_uv, 0, 1); // 将 f_uv 扩展为 vec4，设置第四个分量为 1.0
+            }
+
+        `.trim();
+
+        // 创建着色器的函数
+        function createShader(gl, type, src){
+            const shader = gl.createShader(type);
+            if (!shader) {
+                console.error("Failed to create shader. Invalid shader type or WebGL context issue.");
+                return null;
+            }
+
+            gl.shaderSource(shader, src);
+            gl.compileShader(shader);
+
+            const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+            if (success) {
+                return shader;
+            }
+
+            // 输出错误日志
+            console.error("Shader compile failed:", gl.getShaderInfoLog(shader));
+            gl.deleteShader(shader);
+            return null;
+        }
+
+        function createProgram(gl, vertShader, fragShader){
+            const program = gl.createProgram()
+            gl.attachShader(program, vertShader)
+            gl.attachShader(program, fragShader)
+            gl.linkProgram(program)
+
+            const success = gl.getProgramParameter(program, gl.LINK_STATUS)
+            if (success) return program
+
+            console.error("could not link program", gl.getProgramInfoLog(program))
+            gl.deleteProgram(program)
+            return null;
+        }
+
+        // 主函数
+        function main () {
+            const canvas = document.getElementById('canvas');
+            const gl = canvas.getContext('webgl2');
+            if (!gl) {
+                console.error("Could not initialize WebGL 2 context. Please check compatibility.");
+                return;
+            }
+
+            console.log("WebGL 2 context initialized successfully.");
+
+            // 创建顶点和片段着色器，并检查是否成功
+            const vertShader = createShader(gl, gl.VERTEX_SHADER, vs);
+            const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fs);
+
+            if (!vertShader || !fragShader) return;
+
+            const program = createProgram(gl, vertShader, fragShader);
+            if (!program) return;
+
+            // gl.useProgram(program);
+
+            // 获取顶点位置的属性位置
+            const posAttrLoc = gl.getAttribLocation(program, "a_pos");
+            const uvAttrLoc = gl.getAttribLocation(program, "a_uv");
+
+            // 顶点数据，包含 x, y, z 三个维度
+            const data = new Float32Array([
+            //   x      y    z   u v 
+                -1, -1, 0.0, 0, 0,
+                1,  1, 0.0, 1, 0,
+                1,  -1, 0.0, 1, 1,
+                -1, 1, 0.0, 0, 1,
+            ]);
+
+            const indices = new Uint16Array([
+                0, 1, 2,
+                0, 3, 1,
+            ])
+
+            // 创建并绑定 VAO 和 VBO
+            const vao = gl.createVertexArray();
+            gl.bindVertexArray(vao);
+
+            const vbo = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+            // 启用顶点属性并定义其格式
+            gl.enableVertexAttribArray(posAttrLoc);
+            gl.vertexAttribPointer(posAttrLoc, 3, gl.FLOAT, false, 5 * 4, 0);
+            gl.enableVertexAttribArray(uvAttrLoc);
+            gl.vertexAttribPointer(uvAttrLoc, 3, gl.FLOAT, false, 5 * 4, 3 * 4);
+
+            const ebo = gl.createBuffer();
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo);
+            gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+            // 设置视口和清屏颜色
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            // 绘制三角形
+            gl.useProgram(program);
+            gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+        }
+
+        main();
+    </script>
+</body>
+</html>
