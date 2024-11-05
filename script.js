@@ -293,18 +293,23 @@ let gameStatus = GAME_STATUS_HALT
 let gameTimer = 0
 let score = 0
 
+let isInitialized = 0 //ensure the initialization only happen once
 function initialGame(){
   if (userMessage != controlNo){
     gameStatus = GAME_STATUS_PLAY
   }
-  gameArray.fill(isEmpty,0,(gridInfo.width * gridInfo.height))
-  const startX = Math.floor(gridInfo.width / 2);  // middle floor
-  const startY = Math.floor(gridInfo.height / 2); // middle range
-  const snakeStartIndex = calculateGridPlace(startX, startY)
-  gameArray[snakeStartIndex] = haveSnake; // define snake position as have snak
-  // console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
-  score = 0
-  // console.log(gameStatus)
+  if (isInitialized == 0){
+    gameArray.fill(isEmpty,0,(gridInfo.width * gridInfo.height))
+    const startX = Math.floor(gridInfo.width / 2);  // middle floor
+    const startY = Math.floor(gridInfo.height / 2); // middle range
+    const snakeStartIndex = calculateGridPlace(startX, startY)
+    gameArray[snakeStartIndex] = haveSnake; // define snake position as have snak
+    snakeBody.unshift(snakeStartIndex)// give an origin body of snake
+    // console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
+    score = 0
+    // console.log(gameStatus)
+    isInitialized = 1
+  }
 }
 
 // //code of game logic
