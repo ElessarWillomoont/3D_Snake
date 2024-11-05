@@ -111,30 +111,28 @@ async function main() {
 function canvasControl() {
     let startX, startY;
 
-    // 处理键盘方向键
+    // handle the keyboard keys
     document.addEventListener('keydown', (event) => {
         switch (event.key) {
             case 'ArrowUp':
-                userMessage = 1; // 设置状态为1
+                userMessage = 1; // set to 1
                 break;
             case 'ArrowDown':
-                userMessage = 2; // 设置状态为2
+                userMessage = 2; // set to 2
                 break;
             case 'ArrowLeft':
-                userMessage = 3; // 设置状态为3
+                userMessage = 3; // set to 3
                 break;
             case 'ArrowRight':
-                userMessage = 4; // 设置状态为4
-                break;
+                userMessage = 4; // set to 4
             default:
-                userMessage = 0; // 默认值
+                userMessage = 0; // default
                 break;
         }
     });
 
-    // 处理触摸滑动事件
     document.addEventListener('touchstart', (event) => {
-        event.preventDefault(); // 阻止默认行为
+        event.preventDefault(); 
         startX = event.touches[0].clientX;
         startY = event.touches[0].clientY;
     });
@@ -146,24 +144,67 @@ function canvasControl() {
         const diffX = endX - startX;
         const diffY = endY - startY;
 
-        // 设置滑动判断的角度阈值
-        const angleThreshold = Math.tan(45 * Math.PI / 180); // 45°角的tan值大约为1
+        // set the angle blockage
+        const angleThreshold = Math.tan(45 * Math.PI / 180); // tan = 1
 
         if (Math.abs(diffX / diffY) > angleThreshold) {
             if (diffX > 0) {
-                userMessage = 4; // 设置状态为4 (右滑)
+                userMessage = 4; 
             } else {
-                userMessage = 3; // 设置状态为3 (左滑)
+                userMessage = 3;
             }
         } else if (Math.abs(diffY / diffX) > angleThreshold) {
             if (diffY > 0) {
-                userMessage = 2; // 设置状态为2 (下滑)
+                userMessage = 2;
             } else {
-                userMessage = 1; // 设置状态为1 (上滑)
+                userMessage = 1;
             }
         }
     });
 }
+
+//variables for snake
+const MAX_Grid_SIZE = 200 //maxium grid size, use to define the array converting size
+const u_acctual_size = gl.getUniformLocation(program, "u_acctual_size")
+const u_gridWidth = gl.getUniformLocation(program, "u_gridWidth")
+const u_gridHeight = gl.getUniformLocation(program, "u_gridHeight")
+
+//calculate the wide/heigt ratio
+function getGridInfo() {
+  const screenWidth = window.screen.width;
+  const screenHeight = window.screen.height;
+
+  const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+  const divisor = gcd(screenWidth, screenHeight);
+
+  const aspectWidth = screenWidth / divisor;
+  const aspectHeight = screenHeight / divisor;
+  let gridHeight = 0
+  let gridWidth = 0
+
+  console.log(`resouloution: ${screenWidth}x${screenHeight}`);
+  console.log(`ratio: ${aspectWidth}:${aspectHeight}`);
+  if (aspectWidth > aspectHeight){
+    gridHeight = 10
+    gridWidth = Math.min((Math.floor(10 *(screenWidth/screenHeight))),20)
+  }
+  else {
+    gridWidth = 10
+    gridHeight = Math.min((Math.floor(10 * (screenHeight/screenWidth))),20)
+  }
+
+  return { width: gridWidth, height: gridHeight };
+}
+
+
+
+// get the screen ratio
+const gridInfo = getGridInfo();
+let calculated_grid_size = gridInfo.width * gridInfo.height;
+let calculated_grid_height = gridInfo.height;
+console.log(`grid height: ${calculated_grid_height}`);
+let calculated_grid_width = gridInfo.width;
+console.log(`grid width: ${calculated_grid_width}`);
 
   // Render loop
   function loop() {
@@ -179,6 +220,9 @@ function canvasControl() {
 
       canvasControl()
       gl.uniform1i(u_msg, userMessage);
+      gl.uniform1i(u_acctual_size, calculated_grid_size);
+      gl.uniform1i(u_gridWidth, calculated_grid_width);
+      gl.uniform1i(u_gridHeight, calculated_grid_height);
 
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
