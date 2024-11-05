@@ -113,6 +113,7 @@ const controlUP = 1
 const controlDown = 2
 const controlLeft = 3
 const controlRight = 4
+const controlNo = 0
 
 
 function canvasControl() {
@@ -132,8 +133,9 @@ function canvasControl() {
                 break;
             case 'ArrowRight':
                 userMessage = controlRight; // set to 4
+                break;
             default:
-                userMessage = 0; // default
+                userMessage = controlNo; // default
                 break;
         }
     });
@@ -168,6 +170,7 @@ function canvasControl() {
             }
         }
     });
+    console.log(userMessage)
 }
 
 //variables for snake
@@ -233,14 +236,17 @@ let gameTimer = 0
 let score = 0
 
 function initialGame(){
-  gameStatus = GAME_STATUS_HALT
+  if (userMessage != controlNo){
+    gameStatus = GAME_STATUS_PLAY
+  }
   gameArray.fill(isEmpty,0,(gridInfo.width * gridInfo.height))
   const startX = Math.floor(gridInfo.width / 2);  // middle floor
   const startY = Math.floor(gridInfo.height / 2); // middle range
   const snakeStartIndex = calculateGridPlace(startX, startY)
   gameArray[snakeStartIndex] = haveSnake; // define snake position as have snak
-  console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
+  // console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
   score = 0
+  console.log(gameStatus)
 }
 
 // //code of game logic
@@ -292,7 +298,7 @@ function gameLoop(gameInput){
   if (gameArray[currentSnakeIndex] == isEmpty){
     gameArray[currentSnakeIndex] = haveSnake
     snakeBody.unshift(currentSnakeIndex) // add new head to snake
-    snakeEndIndex = snakeBody.pop() // remove the end of tail
+    let snakeEndIndex = snakeBody.pop() // remove the end of tail
     gameArray[snakeEndIndex] = isEmpty
     return
   }
@@ -321,7 +327,7 @@ const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
       gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height);
       gl.uniform1f(u_time, time.t);
       gl.uniform1f(u_dt, time.dt());
-
+      console.log(gameStatus)
       canvasControl()
       if (gameStatus == GAME_STATUS_HALT){
         initialGame()
