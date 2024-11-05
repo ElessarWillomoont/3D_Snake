@@ -15,6 +15,7 @@ const int haveApple = 3;
 #define EPS         0.001
 #define N_MAX_STEPS 1000
 #define MAX_DIST    10000.0
+#define SCALE_FACTOR 14.1  // Scale factor for position and radius
 
 // Sphere SDF function
 float sdf_sphere(vec3 p, float r) {
@@ -28,12 +29,12 @@ float sdf_scene(vec3 p, out int sphereColor) {
 
     // Loop through each sphere defined in u_calculatedGridArray
     for (int i = 0; i < dotNum; i++) {
-        // Apply aspect ratio correction to the x coordinate
-        vec3 center = vec3(u_calculatedGridArray[i * 4 + 1] * (u_resolution.x / u_resolution.y), u_calculatedGridArray[i * 4 + 2], 0.0);
+        // Scale the sphere center position and radius
+        vec3 center = vec3(u_calculatedGridArray[i * 4 + 1] * (u_resolution.x / u_resolution.y), u_calculatedGridArray[i * 4 + 2], 0.0) * SCALE_FACTOR;
         int state = int(u_calculatedGridArray[i * 4 + 3]);
 
-        // Calculate the distance from the ray position to the sphere center
-        float dist = sdf_sphere(p - center, u_radius);
+        // Calculate the distance from the ray position to the scaled sphere center
+        float dist = sdf_sphere(p - center, u_radius * SCALE_FACTOR * 2.5); // Apply scale factor to radius
         if (dist < minDist) {
             minDist = dist;
             sphereColor = state; // Store the color (snake or apple) of the closest sphere
@@ -72,8 +73,8 @@ void main() {
     vec2 uv = (gl_FragCoord.xy / u_resolution) * 2.0 - 1.0;
     uv.x *= u_resolution.x / u_resolution.y;
 
-    vec3 ro = vec3(0.0, 0.0, -1.0); // Ray origin
-    vec3 rd = normalize(vec3(uv, 1.0)); // Ray direction
+    vec3 ro = vec3(0.0, 0.0, -20.0); // Increase the ray origin distance
+    vec3 rd = normalize(vec3(uv, 1.5)); // Adjust ray direction for better perspective
 
     int sphereColor;
     float t = ray_march(ro, rd, sphereColor);
@@ -86,7 +87,7 @@ void main() {
         vec3 lightDir = normalize(vec3(1.0, 1.0, -1.0));
         float diff = max(dot(n, lightDir), 0.0);
 
-        // Color based on the sphere color
+        // Set color based on sphere type
         vec3 color = vec3(0.8); // Default gray
         if (sphereColor == haveSnake) {
             color = vec3(0.0, 1.0, 0.0) * diff; // Green for snake
