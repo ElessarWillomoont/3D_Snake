@@ -308,6 +308,9 @@ function initialGame(){
     snakeBody.unshift(snakeStartIndex)// give an origin body of snake
     // console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
     score = 0
+    let actualX = calculateActualCenterPoint(startX,startY).actualX
+    let actualY = calculateActualCenterPoint(startX,startY).actualY
+    calculatedArrayUpdate(snakeStartIndex, actualX, actualY, haveSnake,'add')
     // console.log(gameStatus)
     isInitialized = 1
   }
@@ -335,6 +338,9 @@ function initialGame(){
     }
     //if the place is empty, put apple
     gameArray[appleIndex] = haveApple
+    let actualX = calculateActualCenterPoint(appleX,appleY).actualX
+    let actualY = calculateActualCenterPoint(appleX,appleY).actualY
+    calculatedArrayUpdate(appleIndex, actualX, actualY, haveApple,'add')
     appleStatus = applePuted
     return
   }
@@ -362,9 +368,15 @@ function initialGame(){
     currentSnakeIndex = calculateGridPlace(currentSnakeX,currentSnakeY)
     if (gameArray[currentSnakeIndex] == isEmpty){
       gameArray[currentSnakeIndex] = haveSnake
+      let actualX1 =calculateActualCenterPointbyIndex(currentSnakeIndex).actualX
+      let actualY1 =calculateActualCenterPointbyIndex(currentSnakeIndex).actualY
+      calculatedArrayUpdate(currentSnakeIndex, actualX1, actualY1, haveSnake,'add')
       snakeBody.unshift(currentSnakeIndex) // add new head to snake
       let snakeEndIndex = snakeBody.pop() // remove the end of tail
       gameArray[snakeEndIndex] = isEmpty
+      let actualX2 =calculateActualCenterPointbyIndex(snakeEndIndex).actualX
+      let actualY2 =calculateActualCenterPointbyIndex(snakeEndIndex).actualY
+      calculatedArrayUpdate(snakeEndIndex, actualX2, actualY2, isEmpty,'sub')
       return
     }
     if (gameArray[currentSnakeIndex] == haveSnake){
@@ -374,14 +386,78 @@ function initialGame(){
     if (gameArray[currentSnakeIndex] == haveApple){
       score = score + 1
       gameArray[currentSnakeIndex] = haveSnake
+      let actualX =calculateActualCenterPointbyIndex(currentSnakeIndex).actualX
+      let actualY =calculateActualCenterPointbyIndex(currentSnakeIndex).actualY
+      calculatedArrayUpdate(currentSnakeIndex, actualX, actualY, haveApple,'sub')
+      calculatedArrayUpdate(currentSnakeIndex, actualX, actualY, haveSnake,'add')
       snakeBody.unshift(currentSnakeIndex)
       appleStatus = noApple // no apple any more
       return
     }
   }
-    // setupControls()
+
+  //reduce the load of GPU, calculate the center and status of each dot only when needed
+  const u_calculatedGridArray = gl.getUniformLocation(program, "u_calculatedGridArray")
+  let calculatedArray = new Float32Array(MAX_Grid_SIZE * 4).fill(unUse);
+  const dotNum = gl.getUniformLocation(program, "dotNum")
+  let usedDotNumber = 0
+
+  // function to opreate the calculated array, get the index, x and y and wanted behive
+  function calculatedArrayUpdate(index, x, y, status, behive){
+    if (behive == 'add'){//add a dot in the array
+      calculatedArray[usedDotNumber * 4] = index // dot index
+      calculatedArray[usedDotNumber * 4 + 1] = x // x location of the center of dot
+      calculatedArray[usedDotNumber * 4 + 2] = y// y location of the center of dot
+      calculatedArray[usedDotNumber * 4 + 3] = status //dot location, snake or apple
+      usedDotNumber = usedDotNumber + 1
+    }
+    else if (behive == 'sub'){
+      for (let i = 0; i < calculatedArray.length; i += 4) {
+        if(calculatedArray[i] == index){ //search the dot index
+          calculatedArray[i]= calculatedArray[(usedDotNumber - 1) * 4]; // after find, use the last valid dot to replace
+          calculatedArray[i + 1] = calculatedArray[(usedDotNumber - 1) * 4 + 1];
+          calculatedArray[i + 2] = calculatedArray[(usedDotNumber - 1) * 4 + 2];
+          calculatedArray[i + 3] = calculatedArray[(usedDotNumber - 1) * 4 + 3];
+          // set the end dot into 0
+          calculatedArray[(usedDotNumber - 1) * 4] = 0
+          calculatedArray[(usedDotNumber - 1) * 4 + 1] = 0
+          calculatedArray[(usedDotNumber - 1) * 4 + 2] = 0
+          calculatedArray[(usedDotNumber - 1) * 4 + 3] = 0
+          break
+        }
+      }
+      usedDotNumber = usedDotNumber - 1
+    }
+  }
+
+  function calculateActualCenterPoint(localX, localY){
+    let dotIndex = calculateGridPlace(localX, localY)
+    // calculate the height and width of each cell
+    let cellWidth = window.screen.width / gridInfo.width;
+    let cellHeight = window.screen.height / gridInfo.height;
+    
+    // calculate actual center of the cell
+    let actualX = (localX + 0.5) * cellWidth;
+    let actualY = (localY + 0.5) * cellHeight;
+    return{dotIndex : dotIndex, actualX : actualX, actualY : actualY}
+  }
+
+  // nearly same as upper, but use index
+  function calculateActualCenterPointbyIndex(index){
+    let localX = index%gridInfo.width
+    let localY = Math.floor(index/gridInfo.width)
+    let cellWidth = window.screen.width / gridInfo.width;
+    let cellHeight = window.screen.height / gridInfo.height;
+    
+    // calculate actual center of the cell
+    let actualX = (localX + 0.5) * cellWidth;
+    let actualY = (localY + 0.5) * cellHeight;
+    return{actualX : actualX, actualY : actualY}
+  }
 
   const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
+  const u_radius = gl.getUniformLocation(program, "u_radius")
+  const radius = Math.min(window.screen.width / gridInfo.width, window.screen.height / gridInfo.height)/2
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -400,7 +476,10 @@ function initialGame(){
       gl.uniform1i(u_acctual_size, calculated_grid_size);
       gl.uniform1i(u_gridWidth, calculated_grid_width);
       gl.uniform1i(u_gridHeight, calculated_grid_height);
+      gl.uniform1i(dotNum, usedDotNumber)
+      gl.uniform1f(u_radius, radius);
       gl.uniform1iv(u_gameArray, gameArray);// convert the game array to renderer
+      gl.uniform1fv(u_calculatedGridArray, calculatedArray);
 
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
