@@ -35,13 +35,12 @@ float sdf_scene(vec3 p, int cellState, vec3 sphereCenter, float radius) {
 vec3 approx_normal(vec3 p) {
     vec2 eps = vec2(EPS, -EPS);
     return normalize(
-        eps.xyy * sdf_scene(p + eps.xyy) + \
-        eps.yyx * sdf_scene(p + eps.yyx) + \
-        eps.yxy * sdf_scene(p + eps.yxy) + \
-        eps.xxx * sdf_scene(p + eps.xxx)
+        eps.xyy * sdf_scene(p + eps.xyy, cellState, cellCenter, radius) +
+        eps.yyx * sdf_scene(p + eps.yyx, cellState, cellCenter, radius) +
+        eps.yxy * sdf_scene(p + eps.yxy, cellState, cellCenter, radius) +
+        eps.xxx * sdf_scene(p + eps.xxx, cellState, cellCenter, radius)
     );
 }
-
 //real code
 void main() {
     // Width and height of each grid cell
