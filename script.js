@@ -31,6 +31,7 @@ function createProgram(gl, vertShader, fragShader) {
 async function main() {
   const canvas = document.getElementById("canvas");
   const fpsDisplay = document.getElementById("fps-display");
+  const statusDisplay = document.getElementById("game-status-display");
   const gl = canvas.getContext("webgl2");
 
   if (!gl) {
@@ -102,11 +103,11 @@ async function main() {
 
           const avg_dt = this.dts.reduce((a, dt) => a + dt, 0) / this.dts.length;
           fpsDisplay.innerHTML = `${Math.round(1 / avg_dt)} FPS`;
+          statusDisplay.innerHTML = `${gameStatus}`
       },
   };
 
   const u_msg = gl.getUniformLocation(program, "u_msg")//convert the user control
-  let userMessage = 0
 
 // consts for user control status
 const controlUP = 1
@@ -115,6 +116,63 @@ const controlLeft = 3
 const controlRight = 4
 const controlNo = 0
 
+
+let userMessage = controlNo;
+let currentDirection = controlNo;
+
+// function setupControls() {
+//   let startX, startY;
+
+//   document.addEventListener('keydown', (event) => {
+//     switch (event.key) {
+//       case 'ArrowUp':
+//         currentDirection = controlUP;
+//         break;
+//       case 'ArrowDown':
+//         currentDirection = controlDown;
+//         break;
+//       case 'ArrowLeft':
+//         currentDirection = controlLeft;
+//         break;
+//       case 'ArrowRight':
+//         currentDirection = controlRight;
+//         break;
+//       default:
+//         // Do nothing
+//         break;
+//     }
+//   });
+
+//   document.addEventListener('touchstart', (event) => {
+//     event.preventDefault();
+//     startX = event.touches[0].clientX;
+//     startY = event.touches[0].clientY;
+//   });
+
+//   document.addEventListener('touchend', (event) => {
+//     const endX = event.changedTouches[0].clientX;
+//     const endY = event.changedTouches[0].clientY;
+
+//     const diffX = endX - startX;
+//     const diffY = endY - startY;
+
+//     const angleThreshold = Math.tan(45 * Math.PI / 180);
+
+//     if (Math.abs(diffX / diffY) > angleThreshold) {
+//       if (diffX > 0) {
+//         currentDirection = controlRight;
+//       } else {
+//         currentDirection = controlLeft;
+//       }
+//     } else if (Math.abs(diffY / diffX) > angleThreshold) {
+//       if (diffY > 0) {
+//         currentDirection = controlDown;
+//       } else {
+//         currentDirection = controlUP;
+//       }
+//     }
+//   });
+// }
 
 function canvasControl() {
     let startX, startY;
@@ -170,7 +228,7 @@ function canvasControl() {
             }
         }
     });
-    console.log(userMessage)
+    // console.log(userMessage)
 }
 
 //variables for snake
@@ -246,7 +304,7 @@ function initialGame(){
   gameArray[snakeStartIndex] = haveSnake; // define snake position as have snak
   // console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
   score = 0
-  console.log(gameStatus)
+  // console.log(gameStatus)
 }
 
 // //code of game logic
@@ -276,6 +334,7 @@ function putApple(){
 }
 
 function gameLoop(gameInput){
+  console.log(gameStatus)
   switch(gameInput){
     case controlUP:
       currentSnakeY = currentSnakeY + 1
@@ -315,6 +374,8 @@ function gameLoop(gameInput){
   }
 }
 
+// setupControls()
+
 const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
   // Render loop
   function loop() {
@@ -327,7 +388,8 @@ const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
       gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height);
       gl.uniform1f(u_time, time.t);
       gl.uniform1f(u_dt, time.dt());
-      console.log(gameStatus)
+      // console.log(userMessage)
+      // console.log(gameStatus)
       canvasControl()
       if (gameStatus == GAME_STATUS_HALT){
         initialGame()

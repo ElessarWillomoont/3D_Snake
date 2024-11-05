@@ -25,3 +25,14 @@ html, body {
     border-radius: 5px;
     z-index: 10; /* 确保在 canvas 之上 */
 }
+
+#game-status-display {
+    position: absolute;
+    top: 3px;
+    font-size: 2rem;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明背景增强可读性 */
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 10; /* 确保在 canvas 之上 */
+}
