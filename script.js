@@ -146,13 +146,16 @@ function canvasControl() {
         const diffX = endX - startX;
         const diffY = endY - startY;
 
-        if (Math.abs(diffX) > Math.abs(diffY)) {
+        // 设置滑动判断的角度阈值
+        const angleThreshold = Math.tan(45 * Math.PI / 180); // 45°角的tan值大约为1
+
+        if (Math.abs(diffX / diffY) > angleThreshold) {
             if (diffX > 0) {
                 userMessage = 4; // 设置状态为4 (右滑)
             } else {
                 userMessage = 3; // 设置状态为3 (左滑)
             }
-        } else {
+        } else if (Math.abs(diffY / diffX) > angleThreshold) {
             if (diffY > 0) {
                 userMessage = 2; // 设置状态为2 (下滑)
             } else {
@@ -161,7 +164,6 @@ function canvasControl() {
         }
     });
 }
-
 
   // Render loop
   function loop() {
