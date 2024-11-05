@@ -32,6 +32,16 @@ float sdf_scene(vec3 p, int cellState, vec3 sphereCenter, float radius) {
     return MAX_DIST; // No object if cell is empty
 }
 
+vec3 approx_normal(vec3 p) {
+    vec2 eps = vec2(EPS, -EPS);
+    return normalize(
+        eps.xyy * sdf_scene(p + eps.xyy) + \
+        eps.yyx * sdf_scene(p + eps.yyx) + \
+        eps.yxy * sdf_scene(p + eps.yxy) + \
+        eps.xxx * sdf_scene(p + eps.xxx)
+    );
+}
+
 //real code
 void main() {
     // Width and height of each grid cell

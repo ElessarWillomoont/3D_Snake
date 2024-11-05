@@ -313,76 +313,75 @@ function initialGame(){
   }
 }
 
-// //code of game logic
-const noApple = 0
-const applePuted = 1
-let currentSnakeX = Math.floor(gridInfo.width / 2)
-let currentSnakeY = Math.floor(gridInfo.height / 2)
-let appleStatus = noApple
-let currentSnakeIndex = 0
-let snakeBody = []
+  // //code of game logic
+  const noApple = 0
+  const applePuted = 1
+  let currentSnakeX = Math.floor(gridInfo.width / 2)
+  let currentSnakeY = Math.floor(gridInfo.height / 2)
+  let appleStatus = noApple
+  let currentSnakeIndex = 0
+  let snakeBody = []
 
-function putApple(){
-  let appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
-  let appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
-  let appleIndex = calculateGridPlace(appleX, appleY);
+  function putApple(){
+    let appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
+    let appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
+    let appleIndex = calculateGridPlace(appleX, appleY);
 
-  // try to find a empty place
-  while (gameArray[appleIndex] != isEmpty) {
-    appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
-    appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
-    appleIndex = calculateGridPlace(appleX, appleY);
-  }
-  //if the place is empty, put apple
-  gameArray[appleIndex] = haveApple
-  appleStatus = applePuted
-  return
-}
-
-function gameLoop(gameInput){
-  console.log(gameStatus)
-  switch(gameInput){
-    case controlUP:
-      currentSnakeY = currentSnakeY + 1
-      break;
-    case controlDown:
-      currentSnakeY = currentSnakeY - 1
-      break;
-    case controlLeft:
-      currentSnakeX = currentSnakeX -1
-      break;
-    case controlRight:
-      currentSnakeX = currentSnakeX + 1
-      break;
-  }
-  if ((currentSnakeX < 0) || (currentSnakeY < 0) || (currentSnakeX >= gridInfo.width) || (currentSnakeY >= gridInfo.height)){
-    gameStatus = GAME_STATUS_END
-    return
-  }// touch the edge, return
-  currentSnakeIndex = calculateGridPlace(currentSnakeX,currentSnakeY)
-  if (gameArray[currentSnakeIndex] == isEmpty){
-    gameArray[currentSnakeIndex] = haveSnake
-    snakeBody.unshift(currentSnakeIndex) // add new head to snake
-    let snakeEndIndex = snakeBody.pop() // remove the end of tail
-    gameArray[snakeEndIndex] = isEmpty
+    // try to find a empty place
+    while (gameArray[appleIndex] != isEmpty) {
+      appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
+      appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
+      appleIndex = calculateGridPlace(appleX, appleY);
+    }
+    //if the place is empty, put apple
+    gameArray[appleIndex] = haveApple
+    appleStatus = applePuted
     return
   }
-  if (gameArray[currentSnakeIndex] == haveSnake){
-    gameStatus = GAME_STATUS_END
-    return
-  }// game over if touch itself
-  if (gameArray[currentSnakeIndex] == haveApple){
-    score = score + 1
-    gameArray[currentSnakeIndex] = haveSnake
-    snakeBody.unshift(currentSnakeIndex)
-    appleStatus = noApple // no apple any more
-    return
+
+  function gameLoop(gameInput){
+    console.log(gameStatus)
+    switch(gameInput){
+      case controlUP:
+        currentSnakeY = currentSnakeY + 1
+        break;
+      case controlDown:
+        currentSnakeY = currentSnakeY - 1
+        break;
+      case controlLeft:
+        currentSnakeX = currentSnakeX -1
+        break;
+      case controlRight:
+        currentSnakeX = currentSnakeX + 1
+        break;
+    }
+    if ((currentSnakeX < 0) || (currentSnakeY < 0) || (currentSnakeX >= gridInfo.width) || (currentSnakeY >= gridInfo.height)){
+      gameStatus = GAME_STATUS_END
+      return
+    }// touch the edge, return
+    currentSnakeIndex = calculateGridPlace(currentSnakeX,currentSnakeY)
+    if (gameArray[currentSnakeIndex] == isEmpty){
+      gameArray[currentSnakeIndex] = haveSnake
+      snakeBody.unshift(currentSnakeIndex) // add new head to snake
+      let snakeEndIndex = snakeBody.pop() // remove the end of tail
+      gameArray[snakeEndIndex] = isEmpty
+      return
+    }
+    if (gameArray[currentSnakeIndex] == haveSnake){
+      gameStatus = GAME_STATUS_END
+      return
+    }// game over if touch itself
+    if (gameArray[currentSnakeIndex] == haveApple){
+      score = score + 1
+      gameArray[currentSnakeIndex] = haveSnake
+      snakeBody.unshift(currentSnakeIndex)
+      appleStatus = noApple // no apple any more
+      return
+    }
   }
-}
+    // setupControls()
 
-// setupControls()
-
-const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
+  const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);

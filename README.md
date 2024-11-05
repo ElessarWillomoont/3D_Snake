@@ -15,7 +15,8 @@ Simply click the link below:
 
 ### Mobile
 
-Due to the autoplay policy, can't for now.
+Simply slip up, down or left right to start the game. 
+It runs on the Edge and Chrome on my android phone, but if you use Brave or Safri browser on Iphone may have problem.
 
 ## How to Play
 
