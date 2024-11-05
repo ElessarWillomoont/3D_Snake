@@ -243,7 +243,7 @@ const isEmpty = 1
 const haveSnake = 2
 const haveApple =3
 
-let gameArray = new Array(MAX_Grid_SIZE).fill(unUse); // game array that store the messages(snake, apple, empty)
+let gameArray = new Int32Array(MAX_Grid_SIZE).fill(unUse); // game array that store the messages(snake, apple, empty)
 console.log(`grid width: ${gameArray}`);
 
 
@@ -295,6 +295,7 @@ let score = 0
 
 let isInitialized = 0 //ensure the initialization only happen once
 function initialGame(){
+  console.log("is here")
   if (userMessage != controlNo){
     gameStatus = GAME_STATUS_PLAY
   }
@@ -395,6 +396,17 @@ const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
       gl.uniform1f(u_dt, time.dt());
       // console.log(userMessage)
       // console.log(gameStatus)
+      console.log("gameArray type:", gameArray.constructor.name);
+      gl.uniform1i(u_msg, userMessage);
+      gl.uniform1i(u_acctual_size, calculated_grid_size);
+      gl.uniform1i(u_gridWidth, calculated_grid_width);
+      gl.uniform1i(u_gridHeight, calculated_grid_height);
+      gl.uniform1iv(u_gameArray, gameArray);// convert the game array to renderer
+
+      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+      gl.bindVertexArray(null);
+
       canvasControl()
       if (gameStatus == GAME_STATUS_HALT){
         initialGame()
@@ -409,16 +421,6 @@ const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
           gameTimer = 0
         }
       }
-
-      gl.uniform1i(u_msg, userMessage);
-      gl.uniform1i(u_acctual_size, calculated_grid_size);
-      gl.uniform1i(u_gridWidth, calculated_grid_width);
-      gl.uniform1i(u_gridHeight, calculated_grid_height);
-      gl.uniform1iv(u_gameArray, gameArray);// convert the game array to renderer
-
-      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-
-      gl.bindVertexArray(null);
 
       time.update();
       requestAnimationFrame(loop);
