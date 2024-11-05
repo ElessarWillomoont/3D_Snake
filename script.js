@@ -105,6 +105,63 @@ async function main() {
       },
   };
 
+  const u_msg = gl.getUniformLocation(program, "u_msg")//convert the user control
+  let userMessage = 0
+
+function canvasControl() {
+    let startX, startY;
+
+    // 处理键盘方向键
+    document.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case 'ArrowUp':
+                userMessage = 1; // 设置状态为1
+                break;
+            case 'ArrowDown':
+                userMessage = 2; // 设置状态为2
+                break;
+            case 'ArrowLeft':
+                userMessage = 3; // 设置状态为3
+                break;
+            case 'ArrowRight':
+                userMessage = 4; // 设置状态为4
+                break;
+            default:
+                userMessage = 0; // 默认值
+                break;
+        }
+    });
+
+    // 处理触摸滑动事件
+    document.addEventListener('touchstart', (event) => {
+        startX = event.touches[0].clientX;
+        startY = event.touches[0].clientY;
+    });
+
+    document.addEventListener('touchend', (event) => {
+        const endX = event.changedTouches[0].clientX;
+        const endY = event.changedTouches[0].clientY;
+
+        const diffX = endX - startX;
+        const diffY = endY - startY;
+
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 0) {
+                userMessage = 4; // 设置状态为4 (右滑)
+            } else {
+                userMessage = 3; // 设置状态为3 (左滑)
+            }
+        } else {
+            if (diffY > 0) {
+                userMessage = 2; // 设置状态为2 (下滑)
+            } else {
+                userMessage = 1; // 设置状态为1 (上滑)
+            }
+        }
+    });
+}
+
+
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -116,6 +173,9 @@ async function main() {
       gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height);
       gl.uniform1f(u_time, time.t);
       gl.uniform1f(u_dt, time.dt());
+
+      canvasControl()
+      gl.uniform1i(u_msg, userMessage);
 
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
