@@ -404,10 +404,14 @@ function initialGame(){
 
   // function to opreate the calculated array, get the index, x and y and wanted behive
   function calculatedArrayUpdate(index, x, y, status, behive){
+
+    //norminalize x y into uv
+    const normalizedX = (x / window.screen.width) * 2.0 - 1.0;
+    const normalizedY = (y / window.screen.height) * 2.0 - 1.0;
     if (behive == 'add'){//add a dot in the array
       calculatedArray[usedDotNumber * 4] = index // dot index
-      calculatedArray[usedDotNumber * 4 + 1] = x // x location of the center of dot
-      calculatedArray[usedDotNumber * 4 + 2] = y// y location of the center of dot
+      calculatedArray[usedDotNumber * 4 + 1] = normalizedX // x location of the center of dot
+      calculatedArray[usedDotNumber * 4 + 2] = normalizedY// y location of the center of dot
       calculatedArray[usedDotNumber * 4 + 3] = status //dot location, snake or apple
       usedDotNumber = usedDotNumber + 1
     }
@@ -457,7 +461,7 @@ function initialGame(){
 
   const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
   const u_radius = gl.getUniformLocation(program, "u_radius")
-  const radius = Math.min(window.screen.width / gridInfo.width, window.screen.height / gridInfo.height)/2
+  const radius = Math.min(1 / gridInfo.width, 1 / gridInfo.height)/2
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
