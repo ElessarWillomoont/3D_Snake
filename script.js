@@ -108,6 +108,13 @@ async function main() {
   const u_msg = gl.getUniformLocation(program, "u_msg")//convert the user control
   let userMessage = 0
 
+// consts for user control status
+const controlUP = 1
+const controlDown = 2
+const controlLeft = 3
+const controlRight = 4
+
+
 function canvasControl() {
     let startX, startY;
 
@@ -115,16 +122,16 @@ function canvasControl() {
     document.addEventListener('keydown', (event) => {
         switch (event.key) {
             case 'ArrowUp':
-                userMessage = 1; // set to 1
+                userMessage = controlUP; // set to 1
                 break;
             case 'ArrowDown':
-                userMessage = 2; // set to 2
+                userMessage = controlDown; // set to 2
                 break;
             case 'ArrowLeft':
-                userMessage = 3; // set to 3
+                userMessage = controlLeft; // set to 3
                 break;
             case 'ArrowRight':
-                userMessage = 4; // set to 4
+                userMessage = controlRight; // set to 4
             default:
                 userMessage = 0; // default
                 break;
@@ -149,15 +156,15 @@ function canvasControl() {
 
         if (Math.abs(diffX / diffY) > angleThreshold) {
             if (diffX > 0) {
-                userMessage = 4; 
+                userMessage = controlRight; 
             } else {
-                userMessage = 3;
+                userMessage = controlLeft;
             }
         } else if (Math.abs(diffY / diffX) > angleThreshold) {
             if (diffY > 0) {
-                userMessage = 2;
+                userMessage = controlDown;
             } else {
-                userMessage = 1;
+                userMessage = controlUP;
             }
         }
     });
@@ -169,7 +176,16 @@ const u_acctual_size = gl.getUniformLocation(program, "u_acctual_size")
 const u_gridWidth = gl.getUniformLocation(program, "u_gridWidth")
 const u_gridHeight = gl.getUniformLocation(program, "u_gridHeight")
 
-//calculate the wide/heigt ratio
+//variables for the game board
+const isEmpty = 0
+const haveSnake = 1
+const haveApple =2
+
+let gameArray = new Array(MAX_Grid_SIZE).fill(0); // game array that store the messages(snake, apple, empty)
+console.log(`grid width: ${gameArray}`);
+
+
+//calculate the wide/heigt ratio, handle the grid info
 function getGridInfo() {
   const screenWidth = window.screen.width;
   const screenHeight = window.screen.height;
@@ -195,10 +211,6 @@ function getGridInfo() {
 
   return { width: gridWidth, height: gridHeight };
 }
-
-
-
-// get the screen ratio
 const gridInfo = getGridInfo();
 let calculated_grid_size = gridInfo.width * gridInfo.height;
 let calculated_grid_height = gridInfo.height;
@@ -206,6 +218,94 @@ console.log(`grid height: ${calculated_grid_height}`);
 let calculated_grid_width = gridInfo.width;
 console.log(`grid width: ${calculated_grid_width}`);
 
+function calculateGridPlace(x, y){
+  let gridIndex = y * gridInfo.width + x;
+  return gridIndex
+}
+
+const GAME_SPEED_RATIO = 60
+const GAME_STATUS_PLAY = 1
+const GAME_STATUS_HALT = 0
+const GAME_STATUS_END = 2
+let gameStatus = GAME_STATUS_HALT
+let gameTimer = 0
+let score = 0
+
+function initialGame(){
+  gameStatus = GAME_STATUS_HALT
+  const startX = Math.floor(gridInfo.width / 2);  // middle floor
+  const startY = Math.floor(gridInfo.height / 2); // middle range
+  const snakeStartIndex = calculateGridPlace(startX, startY)
+  gameArray[snakeStartIndex] = haveSnake; // define snake position as have snake
+  console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
+  score = 0
+}
+
+// //code of game logic
+const noApple = 0
+const applePuted = 1
+let currentSnakeX = Math.floor(gridInfo.width / 2)
+let currentSnakeY = Math.floor(gridInfo.height / 2)
+let appleStatus = noApple
+let currentSnakeIndex = 0
+let snakeBody = []
+
+function putApple(){
+  let appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
+  let appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
+  let appleIndex = calculateGridPlace(appleX, appleY);
+
+  // try to find a empty place
+  while (gameArray[appleIndex] != isEmpty) {
+    appleX = Math.floor(Math.random() * (gridInfo.width - 2)) + 1;
+    appleY = Math.floor(Math.random() * (gridInfo.height - 2)) + 1;
+    appleIndex = calculateGridPlace(appleX, appleY);
+  }
+  //if the place is empty, put apple
+  gameArray[appleIndex] = haveApple
+  appleStatus = applePuted
+  return
+}
+
+function gameLoop(gameInput){
+  switch(gameInput){
+    case controlUP:
+      currentSnakeY = currentSnakeY + 1
+      break;
+    case controlDown:
+      currentSnakeY = currentSnakeY - 1
+      break;
+    case controlLeft:
+      currentSnakeX = currentSnakeX -1
+      break;
+    case controlRight:
+      currentSnakeX = currentSnakeX + 1
+      break;
+  }
+  if ((currentSnakeX < 0) || (currentSnakeY < 0) || (currentSnakeX >= gridInfo.width) || (currentSnakeY >= gridInfo.height)){
+    gameStatus = GAME_STATUS_END
+    return
+  }// touch the edge, return
+  currentSnakeIndex = calculateGridPlace(currentSnakeX,currentSnakeY)
+  if (gameArray[currentSnakeIndex] == isEmpty){
+    gameArray[currentSnakeIndex] = haveSnake
+    snakeBody.unshift(currentSnakeIndex) // add new head to snake
+    snakeEndIndex = snakeBody.pop() // remove the end of tail
+    gameArray[snakeEndIndex] = isEmpty
+    return
+  }
+  if (gameArray[currentSnakeIndex] == haveSnake){
+    gameStatus = GAME_STATUS_END
+    return
+  }// game over if touch itself
+  if (gameArray[currentSnakeIndex] == haveApple){
+    score = score + 1
+    gameArray[currentSnakeIndex] = haveSnake
+    snakeBody.unshift(currentSnakeIndex)
+    appleStatus = noApple // no apple any more
+    return
+  }
+}
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -219,6 +319,20 @@ console.log(`grid width: ${calculated_grid_width}`);
       gl.uniform1f(u_dt, time.dt());
 
       canvasControl()
+      if (gameStatus == GAME_STATUS_HALT){
+        initialGame()
+      }
+      if (appleStatus == noApple){
+        putApple()
+      }
+      if (gameStatus == GAME_STATUS_PLAY){
+        gameTimer = gameTimer + 1
+        if (gameTimer == GAME_SPEED_RATIO){
+          gameLoop(userMessage)
+          gameTimer = 0
+        }
+      }
+
       gl.uniform1i(u_msg, userMessage);
       gl.uniform1i(u_acctual_size, calculated_grid_size);
       gl.uniform1i(u_gridWidth, calculated_grid_width);
