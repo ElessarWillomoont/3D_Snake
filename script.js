@@ -177,11 +177,12 @@ const u_gridWidth = gl.getUniformLocation(program, "u_gridWidth")
 const u_gridHeight = gl.getUniformLocation(program, "u_gridHeight")
 
 //variables for the game board
-const isEmpty = 0
-const haveSnake = 1
-const haveApple =2
+const unUse = 0
+const isEmpty = 1
+const haveSnake = 2
+const haveApple =3
 
-let gameArray = new Array(MAX_Grid_SIZE).fill(0); // game array that store the messages(snake, apple, empty)
+let gameArray = new Array(MAX_Grid_SIZE).fill(unUse); // game array that store the messages(snake, apple, empty)
 console.log(`grid width: ${gameArray}`);
 
 
@@ -233,10 +234,11 @@ let score = 0
 
 function initialGame(){
   gameStatus = GAME_STATUS_HALT
+  gameArray.fill(isEmpty,0,(gridInfo.width * gridInfo.height))
   const startX = Math.floor(gridInfo.width / 2);  // middle floor
   const startY = Math.floor(gridInfo.height / 2); // middle range
   const snakeStartIndex = calculateGridPlace(startX, startY)
-  gameArray[snakeStartIndex] = haveSnake; // define snake position as have snake
+  gameArray[snakeStartIndex] = haveSnake; // define snake position as have snak
   console.log(`Snake initial position at index: ${snakeStartIndex}, means colum ${startX}, line${startY}`);
   score = 0
 }
@@ -306,6 +308,8 @@ function gameLoop(gameInput){
     return
   }
 }
+
+const u_gameArray = gl.getUniformLocation(program, "u_gameArray")
   // Render loop
   function loop() {
       gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -337,6 +341,7 @@ function gameLoop(gameInput){
       gl.uniform1i(u_acctual_size, calculated_grid_size);
       gl.uniform1i(u_gridWidth, calculated_grid_width);
       gl.uniform1i(u_gridHeight, calculated_grid_height);
+      gl.uniform1iv(u_gameArray, gameArray);// convert the game array to renderer
 
       gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
 
