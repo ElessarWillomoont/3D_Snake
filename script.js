@@ -29,31 +29,28 @@ function createProgram(gl, vertShader, fragShader) {
 }
 
 async function main() {
-  const fps = document.getElementById("fps");
-
-  const time = {
-    current_t: Date.now(),
-    dts: [1 / 60],
-    t: 0,
-
-    dt: () => time.dts[0],
-    update: () => {
-      const new_t = Date.now();
-      time.dts = [(new_t - time.current_t) / 1_000, ...time.dts].slice(0, 10);
-      time.t += time.dt();
-      time.current_t = new_t;
-
-      const dt = time.dts.reduce((a, dt) => a + dt, 0) / time.dts.length;
-      fps.innerHTML = `${Math.round(1 / dt, 2)}`;
-    },
-  };
-
   const canvas = document.getElementById("canvas");
+  const fpsDisplay = document.getElementById("fps-display");
   const gl = canvas.getContext("webgl2");
-  if (!gl) alert("Could not initialize WebGL Context.");
 
-  const vertShader = createShader(gl, gl.VERTEX_SHADER, await readShader("vert")); // prettier-ignore
-  const fragShader = createShader(gl, gl.FRAGMENT_SHADER, await readShader("frag")); // prettier-ignore
+  if (!gl) {
+      alert("Could not initialize WebGL Context.");
+      return;
+  }
+
+  // Set up canvas to be full screen
+  function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  // Initialize shaders and program
+  const vertShader = createShader(gl, gl.VERTEX_SHADER, await readShader("vert"));
+  const fragShader = createShader(gl, gl.FRAGMENT_SHADER, await readShader("frag"));
   const program = createProgram(gl, vertShader, fragShader);
 
   const a_position = gl.getAttribLocation(program, "a_position");
@@ -63,19 +60,14 @@ async function main() {
   const u_time = gl.getUniformLocation(program, "u_time");
   const u_dt = gl.getUniformLocation(program, "u_dt");
 
-  // prettier-ignore
+  // Vertex data for a full-screen quad
   const data = new Float32Array([
-    // x    y       u    v
-    -1.0, -1.0,   0.0, 0.0,
-     1.0, -1.0,   1.0, 0.0,
-     1.0,  1.0,   1.0, 1.0,
-    -1.0,  1.0,   0.0, 1.0,
+      -1.0, -1.0,   0.0, 0.0,
+       1.0, -1.0,   1.0, 0.0,
+       1.0,  1.0,   1.0, 1.0,
+      -1.0,  1.0,   0.0, 1.0,
   ]);
-  // prettier-ignore
-  const indices = new Uint16Array([
-    0, 1, 2,
-    0, 2, 3,
-  ]);
+  const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
 
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
@@ -96,22 +88,43 @@ async function main() {
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
 
+  // Time-related variables
+  const time = {
+      current_t: Date.now(),
+      dts: [1 / 60],
+      t: 0,
+      dt: function () { return this.dts[0]; },
+      update: function () {
+          const new_t = Date.now();
+          this.dts = [(new_t - this.current_t) / 1000, ...this.dts].slice(0, 10);
+          this.t += this.dt();
+          this.current_t = new_t;
+
+          const avg_dt = this.dts.reduce((a, dt) => a + dt, 0) / this.dts.length;
+          fpsDisplay.innerHTML = `${Math.round(1 / avg_dt)} FPS`;
+      },
+  };
+
+  // Render loop
   function loop() {
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.clearColor(0.0, 0.0, 0.0, 1.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
 
-    gl.bindVertexArray(vao);
-    gl.useProgram(program);
-    gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height);
-    gl.uniform1f(u_time, time.t);
-    gl.uniform1f(u_dt, time.dt());
-    gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
-    gl.bindVertexArray(null);
+      gl.bindVertexArray(vao);
+      gl.useProgram(program);
+      gl.uniform2f(u_resolution, gl.canvas.width, gl.canvas.height);
+      gl.uniform1f(u_time, time.t);
+      gl.uniform1f(u_dt, time.dt());
 
-    time.update();
-    requestAnimationFrame(loop);
+      gl.drawElements(gl.TRIANGLES, indices.length, gl.UNSIGNED_SHORT, 0);
+
+      gl.bindVertexArray(null);
+
+      time.update();
+      requestAnimationFrame(loop);
   }
+
   requestAnimationFrame(loop);
 }
 

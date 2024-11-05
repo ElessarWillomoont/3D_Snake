@@ -1,5 +1,4 @@
 <!doctype html>
-
 <html>
     <head>
         <title>Ray Marching - Example 06</title>
@@ -8,26 +7,8 @@
         <link rel="stylesheet" href="../style.css" />
     </head>
     <body class="open-sans-normal">
-        <div>
-            <h1 class="open-sans-black">Lecture 02</h1>
-            <h2 class="open-sans-bold">Ray Marching</h2>
-            <h3 class="open-sans-bold">Example 06</h3>
-        </div>
-        <ul style="display: flex; justify-content: space-between">
-            <li><a href="../example05/index.html">Prev</a></li>
-            <li><a href="../example07/index.html">Next</a></li>
-        </ul>
-        <p style="text-align: center; font-size: 2rem" class="open-sans-bold">
-            <span id="fps">60</span> <span>FPS</span>
-        </p>
-        <div style="width: 100%">
-            <canvas
-                id="canvas"
-                width="800"
-                height="600"
-                style="width: 100%; margin: 0 auto"
-            ></canvas>
-        </div>
+        <div id="fps-display" class="fps-display">60 FPS</div>
+        <canvas id="canvas"></canvas>
 
         <script src="script.js" type="module"></script>
         <script id="vert" src="shader.vert" type="x-shader/x-vertex"></script>
