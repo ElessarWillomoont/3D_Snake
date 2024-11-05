@@ -14,12 +14,12 @@ const int isEmpty = 1;
 const int haveSnake = 2;
 const int haveApple = 3;
 
-//parameters defination get from class code
+// Parameters definition
 #define EPS         0.001
 #define N_MAX_STEPS 80
 #define MAX_DIST    100.0
 
-//sdp function
+// Sphere SDF function
 float sdf_sphere(vec3 p, float r) {
     return length(p) - r;
 }
@@ -32,99 +32,61 @@ float sdf_scene(vec3 p, int cellState, vec3 sphereCenter, float radius) {
     return MAX_DIST; // No object if cell is empty
 }
 
-vec3 approx_normal(vec3 p) {
+// Approximate normal for shading
+vec3 approx_normal(vec3 p, int cellState, vec3 sphereCenter, float radius) {
     vec2 eps = vec2(EPS, -EPS);
     return normalize(
-        eps.xyy * sdf_scene(p + eps.xyy, cellState, cellCenter, radius) +
-        eps.yyx * sdf_scene(p + eps.yyx, cellState, cellCenter, radius) +
-        eps.yxy * sdf_scene(p + eps.yxy, cellState, cellCenter, radius) +
-        eps.xxx * sdf_scene(p + eps.xxx, cellState, cellCenter, radius)
+        eps.xyy * sdf_scene(p + eps.xyy, cellState, sphereCenter, radius) + 
+        eps.yyx * sdf_scene(p + eps.yyx, cellState, sphereCenter, radius) + 
+        eps.yxy * sdf_scene(p + eps.yxy, cellState, sphereCenter, radius) + 
+        eps.xxx * sdf_scene(p + eps.xxx, cellState, sphereCenter, radius)
     );
 }
-//real code
+
+// Main shader code
 void main() {
+
     // Width and height of each grid cell
     float cellWidth = u_resolution.x / float(u_gridWidth);
     float cellHeight = u_resolution.y / float(u_gridHeight);
-    // Radius of the spthere
-    float radius = min(cellWidth,cellHeight) * 0.5;
+    float radius = min(cellWidth, cellHeight) * 0.5; // use half of the short edge as the radius of the circle
 
-    // Determine the grid coordinates (gridX, gridY) for the current pixel
+    // Calculate grid coordinates (gridX, gridY) for the current pixel
     int gridX = int(gl_FragCoord.x / cellWidth);
     int gridY = int(gl_FragCoord.y / cellHeight);
 
-    // Calculate the index in u_gameArray for the current grid cell
+    // Calculate the index in u_gameArray for the current grid
     int gridIndex = gridY * u_gridWidth + gridX;
+
+    // Ensure index is within bounds of u_gameArray
+    if (gridIndex < 0 || gridIndex >= 200) {
+        outColor = vec4(1.0, 1.0, 1.0, 1.0); // Default white color
+        return;
+    }
+
+    // Calculate the center of the current cell
+    vec2 cellCenter = vec2(
+        (float(gridX) + 0.5) * cellWidth,
+        (float(gridY) + 0.5) * cellHeight
+    );
+
+    // Calculate the distance from the pixel to the center of the cell
+    float distToCenter = length(gl_FragCoord.xy - cellCenter);
 
     // Get the state of the current grid cell
     int cellState = u_gameArray[gridIndex];
 
-    // Calculate the center of the current cell
-    vec3 cellCenter = vec3(
-        (float(gridX) + 0.5) * cellWidth,
-        (float(gridY) + 0.5) * cellHeight,
-        0.0
-    );
-    // Ray origin and direction
-    vec3 ro = vec3(gl_FragCoord.xy, -3.0);
-    vec3 rd = normalize(vec3(0.0, 0.0, 1.0)); // Ray pointing along the z-axis
-
-    
-    //do the ray marching
-    float t = 0.0;
-    vec3 col = vec3(0.8); // Background color (light gray)
-    for (int i = 0; i < N_MAX_STEPS; i++) {
-        vec3 p = ro + rd * t;
-        float d = sdf_scene(p, cellState, cellCenter, radius);
-        
-        if (d < EPS || t > MAX_DIST) break;
-        t += d;
-    }
-    // Shade based on distance `t`, applying different colors for snake and apple
-    if (t < MAX_DIST) {
+    // Check if in the circle
+    if (distToCenter < radius) {
+        // If inside the circle, set color based on cellState
         if (cellState == haveSnake) {
-            col = vec3(0.0, 0.6, 0.0) * (1.0 - t * 0.02); // Darker green with shading
+            outColor = vec4(0.0, 1.0, 0.0, 1.0); // Green for snake
         } else if (cellState == haveApple) {
-            col = vec3(0.6, 0.0, 0.0) * (1.0 - t * 0.02); // Darker red with shading
+            outColor = vec4(1.0, 0.0, 0.0, 1.0); // Red for apple
+        } else {
+            outColor = vec4(0.8, 0.8, 0.8, 1.0); // Gray for empty cells
         }
+    } else {
+        outColor = vec4(0.8, 0.8, 0.8, 1.0); // Gray background outside the circle
     }
-    
-    outColor = vec4(col, 1.0);
-
 }
-
-// used to test the game logic
-
-// void main() {
-
-//     // Width and height of each grid cell
-//     float cellWidth = u_resolution.x / float(u_gridWidth);
-//     float cellHeight = u_resolution.y / float(u_gridHeight);
-
-//     // Calculate grid coordinates (gridX, gridY) for the current pixel
-//     int gridX = int(gl_FragCoord.x / cellWidth);
-//     int gridY = int(gl_FragCoord.y / cellHeight);
-
-//     // Calculate the index in u_gameArray for the current grid
-//     int gridIndex = gridY * u_gridWidth + gridX;
-
-//     // Ensure index is within bounds of u_gameArray
-//     if (gridIndex < 0 || gridIndex >= 200) {
-//         outColor = vec4(1.0, 1.0, 1.0, 1.0); // Default white color
-//         return;
-//     }
-
-//     // Get the state of the current grid cell
-//     int cellState = u_gameArray[gridIndex];
-
-//     // Use different colors to represent array states
-//     if (cellState == haveSnake) {
-//         outColor = vec4(0.0, 1.0, 0.0, 1.0); // Green
-//     } else if (cellState == haveApple) {
-//         outColor = vec4(1.0, 0.0, 0.0, 1.0); // Red
-//     } else if (cellState == isEmpty) {
-//         outColor = vec4(0.8, 0.8, 0.8, 1.0); // Gray
-//     } else {
-//         outColor = vec4(0.0, 0.0, 0.0, 1.0); // Black, unused
-//     }
-// }
