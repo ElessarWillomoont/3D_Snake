@@ -134,6 +134,7 @@ function canvasControl() {
 
     // 处理触摸滑动事件
     document.addEventListener('touchstart', (event) => {
+        event.preventDefault(); // 阻止默认行为
         startX = event.touches[0].clientX;
         startY = event.touches[0].clientY;
     });
