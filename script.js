@@ -32,6 +32,7 @@ async function main() {
   const canvas = document.getElementById("canvas");
   const fpsDisplay = document.getElementById("fps-display");
   const statusDisplay = document.getElementById("game-status-display");
+  const scoreDisplay = document.getElementById("score-display");
   const gl = canvas.getContext("webgl2");
 
   if (!gl) {
@@ -103,7 +104,8 @@ async function main() {
 
           const avg_dt = this.dts.reduce((a, dt) => a + dt, 0) / this.dts.length;
           fpsDisplay.innerHTML = `${Math.round(1 / avg_dt)} FPS`;
-          statusDisplay.innerHTML = `${gameStatus}`
+          statusDisplay.innerHTML = getStatusText(gameStatus)
+          scoreDisplay.innerHTML = `Score: ${score}`;
       },
   };
 
@@ -116,6 +118,18 @@ const controlLeft = 3
 const controlRight = 4
 const controlNo = 0
 
+function getStatusText(status) {
+  switch (status) {
+      case GAME_STATUS_PLAY:
+          return "Playing";
+      case GAME_STATUS_HALT:
+          return "Halt";
+      case GAME_STATUS_END:
+          return "Game Over";
+      default:
+          return "Unknown Status";
+  }
+}
 
 let userMessage = controlNo;
 let currentDirection = controlNo;
