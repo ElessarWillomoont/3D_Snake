@@ -13,8 +13,8 @@ const int haveApple = 3;
 
 // Parameters for ray marching
 #define EPS         0.001
-#define N_MAX_STEPS 1000
-#define MAX_DIST    10000.0
+#define N_MAX_STEPS 100
+#define MAX_DIST    300.0
 #define SCALE_FACTOR 14.1  // Scale factor for position and radius
 
 // Sphere SDF function

@@ -132,61 +132,6 @@ function getStatusText(status) {
 }
 
 let userMessage = controlNo;
-let currentDirection = controlNo;
-
-// function setupControls() {
-//   let startX, startY;
-
-//   document.addEventListener('keydown', (event) => {
-//     switch (event.key) {
-//       case 'ArrowUp':
-//         currentDirection = controlUP;
-//         break;
-//       case 'ArrowDown':
-//         currentDirection = controlDown;
-//         break;
-//       case 'ArrowLeft':
-//         currentDirection = controlLeft;
-//         break;
-//       case 'ArrowRight':
-//         currentDirection = controlRight;
-//         break;
-//       default:
-//         // Do nothing
-//         break;
-//     }
-//   });
-
-//   document.addEventListener('touchstart', (event) => {
-//     event.preventDefault();
-//     startX = event.touches[0].clientX;
-//     startY = event.touches[0].clientY;
-//   });
-
-//   document.addEventListener('touchend', (event) => {
-//     const endX = event.changedTouches[0].clientX;
-//     const endY = event.changedTouches[0].clientY;
-
-//     const diffX = endX - startX;
-//     const diffY = endY - startY;
-
-//     const angleThreshold = Math.tan(45 * Math.PI / 180);
-
-//     if (Math.abs(diffX / diffY) > angleThreshold) {
-//       if (diffX > 0) {
-//         currentDirection = controlRight;
-//       } else {
-//         currentDirection = controlLeft;
-//       }
-//     } else if (Math.abs(diffY / diffX) > angleThreshold) {
-//       if (diffY > 0) {
-//         currentDirection = controlDown;
-//       } else {
-//         currentDirection = controlUP;
-//       }
-//     }
-//   });
-// }
 
 function canvasControl() {
     let startX, startY;
